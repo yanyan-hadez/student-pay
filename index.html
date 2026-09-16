@@ -138,35 +138,45 @@
         });
     }
 
-    async function submitPayment() {
-        const name = document.getElementById("studentName").value.trim();
-        const amount = parseFloat(document.getElementById("amount").value);
-        const fileInput = document.getElementById("screenshot");
+   async function submitPayment() {
+    const name = document.getElementById("studentName").value.trim();
+    const amount = parseFloat(document.getElementById("amount").value);
+    const fileInput = document.getElementById("screenshot");
 
-       if (!name || isNaN(amount) || fileInput.files.length === 0) {
-    alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
-    return;
-}
-
-        try {
-            const imageBase64 = await convertImageToBase64(fileInput.files[0]);
-
-            await db.collection("payments").add({
-                studentName: name,
-                amount: amount,
-                image: imageBase64,
-                status: "pending",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert("စာရင်းပေးပို့ပြီးပါပြီ။ Admin စစ်ဆေးသည်အထိ စောင့်ဆိုင်းပေးပါ။");
-            document.getElementById("studentName").value = "";
-            document.getElementById("amount").value = "";
-            fileInput.value = "";
-        } catch (error) {
-            alert("အမှားအယွင်းရှိနေပါသည်: " + error.message);
-        }
+    if (!name || isNaN(amount) || fileInput.files.length === 0) {
+        alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
+        return;
     }
+
+    try {
+        const imageBase64 = await convertImageToBase64(fileInput.files[0]);
+
+        // Firebase ထဲသို့ စာရင်းသွင်းခြင်း
+        await db.collection("payments").add({
+            studentName: name,
+            amount: amount,
+            image: imageBase64,
+            status: "pending",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // =========================================================
+        // 👇 ဒီ ၆ လိုင်းက EmailJS နဲ့ Email ပို့ပေးမယ့် လိုင်းများဖြစ်ပါတယ် 👇
+        // =========================================================
+        emailjs.send("service_czydfd6", "template_kik15kc", {
+            student_name: name,
+            amount: amount
+        }, "UrLUUIHZup0LFltYs");
+        // =========================================================
+
+        alert("စာရင်းပေးပို့ပြီးပါပြီ။ Admin စစ်ဆေးသည်အထိ စောင့်ဆိုင်းပေးပါ။");
+        document.getElementById("studentName").value = "";
+        document.getElementById("amount").value = "";
+        fileInput.value = "";
+    } catch (error) {
+        alert("အမှားအယွင်းရှိနေပါသည်: " + error.message);
+    }
+}
 
     function loadPayments() {
         db.collection("payments").orderBy("timestamp", "desc").onSnapshot(snapshot => {
