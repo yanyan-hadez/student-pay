@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ကျောင်းသား ငွေစာရင်းစနစ်</title>
-    <!-- Firebase SDKs -->
+    <title>Student Payment System</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
-        .card { background: white; max-width: 400px; margin: auto; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input, button { width: 90%; padding: 10px; margin: 8px 0; border-radius: 4px; border: 1px solid #ccc; }
-        button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #218838; }
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { margin-top: 0; color: #333; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .admin-btn { background-color: #6c757d; margin-top: 15px; }
+        .admin-btn:hover { background-color: #5a6268; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; text-align: left; }
+        .data-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+        .data-item img { max-width: 100%; height: auto; border-radius: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -23,22 +30,44 @@
     <input type="number" id="amount" placeholder="ပေးသွင်းငွေပမာဏ">
     <input type="file" id="screenshot" accept="image/*">
     <button onclick="submitPayment()">ပေးပိုမည်</button>
+    <button class="admin-btn" onclick="openLoginModal()">Admin Dashboard</button>
+</div>
+
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <h3>Admin Login</h3>
+        <input type="text" id="adminUser" placeholder="Username">
+        <input type="password" id="adminPass" placeholder="Password">
+        <button onclick="loginAdmin()">ဝင်မည်</button>
+        <button onclick="closeLoginModal()" style="background-color: #dc3545;">မလုပ်တော့ပါ</button>
+    </div>
+</div>
+
+<div class="modal" id="dataModal">
+    <div class="modal-content">
+        <h3>ပေးပိုထားသော စာရင်းများ</h3>
+        <div id="dataContainer">Loading...</div>
+        <button onclick="closeDataModal()" style="background-color: #dc3545; margin-top: 10px;">ပိတ်မည်</button>
+    </div>
 </div>
 
 <script>
-    // Firebase Config (သင့် Project ၏ Config ကို အစားထိုးပါ)
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "student-system-e62bf.firebaseapp.com",
-        projectId: "student-system-e62bf",
-        storageBucket: "student-system-e62bf.appspot.com",
-        messagingSenderId: "749022641532",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyALuXqTtMwsdU_GRQHT_uJTpXbRng15NP0",
+  authDomain: "student-system-e62bf.firebaseapp.com",
+  projectId: "student-system-e62bf",
+  storageBucket: "student-system-e62bf.firebasestorage.app",
+  messagingSenderId: "749022641532",
+  appId: "1:749022641532:web:fcac87e57a8d24093a78f9",
+  measurementId: "G-R4S30BMZ99"
+
     };
 
-    // Firebase Initialize လုပ်ခြင်း
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "123456";
 
     function convertImageToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -55,10 +84,10 @@
         const amount = parseFloat(amountVal);
         const fileInput = document.getElementById("screenshot");
 
-       if (!name || isNaN(amount) || fileInput.files.length === 0) {
-        alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
-        return;
-    }
+        if (!name  isNaN(amount)  fileInput.files.length === 0) {
+alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
+            return;
+        }
 
         try {
             const imageBase64 = await convertImageToBase64(fileInput.files[0]);
@@ -66,7 +95,6 @@
                 studentName: name,
                 amount: amount,
                 image: imageBase64,
-                status: "pending",
                 createdAt: new Date()
             });
             alert("ပေးပိုမှု အောင်မြင်ပါသည်။");
@@ -74,9 +102,61 @@
             document.getElementById("amount").value = "";
             fileInput.value = "";
         } catch (error) {
-            console.error("Error adding document: ", error);
             alert("အချက်အလက် ပေးပိုရာတွင် အမှားတစ်ခု ရှိနေပါသည်: " + error.message);
         }
+    }
+
+    function openLoginModal() {
+        document.getElementById("loginModal").style.display = "flex";
+    }
+
+    function closeLoginModal() {
+        document.getElementById("loginModal").style.display = "none";
+    }
+
+    function closeDataModal() {
+        document.getElementById("dataModal").style.display = "none";
+    }
+
+    function loginAdmin() {
+        const user = document.getElementById("adminUser").value;
+        const pass = document.getElementById("adminPass").value;
+
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+            closeLoginModal();
+            document.getElementById("dataModal").style.display = "flex";
+            loadData();
+        } else {
+            alert("Username သိုမဟုတ် Password မှားယွင်းနေပါသည်။");
+        }
+    }
+
+    function loadData() {
+        const container = document.getElementById("dataContainer");
+        container.innerHTML = "Loading...";
+
+        db.collection("payments").orderBy("createdAt", "desc").get()
+            .then((querySnapshot) => {
+                container.innerHTML = "";
+                if (querySnapshot.empty) {
+                    container.innerHTML = "<p>ပေးပိုထားသော စာရင်းမရှိသေးပါ။</p>";
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const item = document.createElement("div");
+                    item.className = "data-item";
+                    item.innerHTML = `
+                        <p><strong>ကျောင်းသား:</strong> ${data.studentName}</p>
+                        <p><strong>ပမာဏ:</strong> ${data.amount} MMK</p>
+                        <img src="${data.image}" alt="Screenshot">
+                    `;
+                    container.appendChild(item);
+                });
+            })
+            .catch((error) => {
+                container.innerHTML = "Error loading data: " + error.message;
+            });
     }
 </script>
 
