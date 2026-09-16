@@ -3,64 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Payment System</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <title>ကျောင်းသား ငွေစာရင်းစနစ်</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { margin-top: 0; color: #333; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; outline: none; }
-        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background-color: #218838; }
-        .admin-btn { background-color: #6c757d; margin-top: 15px; }
-        .admin-btn:hover { background-color: #5a6268; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2, h3 { color: #333; text-align: center; }
+        
+        .dashboard { background: #10b981; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .dashboard h1 { margin: 5px 0 0; font-size: 32px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; padding: 15px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
+        input, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+
+        .card { border: 1px solid #e5e7eb; background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 8px; }
+        .card img { max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 5px; border: 1px solid #ddd; }
+        .card-header { display: flex; justify-content: space-between; font-weight: bold; }
+        .status { padding: 3px 8px; border-radius: 12px; font-size: 12px; }
+        .status.pending { background: #fef3c7; color: #d97706; }
+        .status.approved { background: #d1fae5; color: #059669; }
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 5px; }
+        .approve-btn { background: #10b981; flex: 1; }
+        .approve-btn:hover { background: #059669; }
+        .delete-btn { background: #ef4444; }
+        .delete-btn:hover { background: #dc2626; }
+        
+        .admin-bar { display: flex; justify-content: space-between; align-items: center; background: #eef2ff; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; text-align: left; }
-        .data-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
-        .data-item img { max-width: 100%; height: auto; border-radius: 5px; margin-top: 5px; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 10px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>ကျောင်းသား ငွေစာရင်း ပေးပိုရန်</h2>
-    <input type="text" id="studentName" placeholder="ကျောင်းသားအမည်">
-    <input type="number" id="amount" placeholder="ပေးသွင်းငွေပမာဏ">
-    <input type="file" id="screenshot" accept="image/*">
-    <button onclick="submitPayment()">ပေးပိုမည်</button>
-    <button class="admin-btn" onclick="openLoginModal()">Admin Dashboard</button>
+<div class="container">
+    <h2>ကျောင်းသား ငွေစာရင်းစနစ်</h2>
+
+    <div class="admin-bar">
+        <span id="adminStatusText">👤 ကျောင်းသား Mode</span>
+        <button id="adminAuthBtn" onclick="openLoginModal()" style="padding: 5px 10px; font-size: 12px;">Admin ဝင်ရန်</button>
+    </div>
+
+    <div class="dashboard">
+        <div>အတည်ပြုပြီး စုစုပေါင်းငွေ (Live Amount)</div>
+        <h1><span id="totalApproved">0</span> ကျပ်</h1>
+    </div>
+
+    <div class="form-group" id="studentForm">
+        <h3>📤 ငွေလွှဲစာရင်း & Screenshot တင်ရန်</h3>
+        <input type="text" id="studentName" placeholder="ကျောင်းသား နာမည်">
+        <input type="number" id="amount" placeholder="ငွေပမာဏ (Amount)">
+        <label style="font-size: 12px; color: #666;">Screenshot ပုံ ရွေးပါ:</label>
+        <input type="file" id="screenshot" accept="image/*">
+        <button onclick="submitPayment()">စာရင်းပေးပို့မည်</button>
+    </div>
+
+    <h3>📋 စာရင်းများ</h3>
+    <div id="paymentList">Loading...</div>
 </div>
 
 <div class="modal" id="loginModal">
     <div class="modal-content">
-        <h3>Admin Login</h3>
+        <h3 style="margin: 0;">🔑 Admin Login</h3>
         <input type="text" id="adminUser" placeholder="Username">
         <input type="password" id="adminPass" placeholder="Password">
         <button onclick="loginAdmin()">ဝင်မည်</button>
-        <button onclick="closeLoginModal()" style="background-color: #dc3545;">မလုပ်တော့ပါ</button>
-    </div>
-</div>
-
-<div class="modal" id="dataModal">
-    <div class="modal-content">
-        <h3>ပေးပိုထားသော စာရင်းများ</h3>
-        <div id="dataContainer">Loading...</div>
-        <button onclick="closeDataModal()" style="background-color: #dc3545; margin-top: 10px;">ပိတ်မည်</button>
+<button onclick="closeLoginModal()" style="background: #6b7280;">မလုပ်တော့ပါ</button>
     </div>
 </div>
 
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyALuXqTtMwsdU_GRQHT_uJTpXbRng15NP0",
-  authDomain: "student-system-e62bf.firebaseapp.com",
-  projectId: "student-system-e62bf",
-  storageBucket: "student-system-e62bf.firebasestorage.app",
-  messagingSenderId: "749022641532",
-  appId: "1:749022641532:web:fcac87e57a8d24093a78f9",
-  measurementId: "G-R4S30BMZ99"
-
+        authDomain: "student-system-e62bf.firebaseapp.com",
+        projectId: "student-system-e62bf",
+        storageBucket: "student-system-e62bf.firebasestorage.app",
+        messagingSenderId: "749022641532",
+        appId: "1:749022641532:web:fcac87e57a8d24093a78f9",
+        measurementId: "G-R4S30BMZ99"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -69,53 +94,21 @@
     const ADMIN_USER = "admin";
     const ADMIN_PASS = "123456";
 
-    function convertImageToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    async function submitPayment() {
-        const name = document.getElementById("studentName").value.trim();
-        const amountVal = document.getElementById("amount").value;
-        const amount = parseFloat(amountVal);
-        const fileInput = document.getElementById("screenshot");
-
-        if (!name  isNaN(amount)  fileInput.files.length === 0) {
-alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
-            return;
-        }
-
-        try {
-            const imageBase64 = await convertImageToBase64(fileInput.files[0]);
-            await db.collection("payments").add({
-                studentName: name,
-                amount: amount,
-                image: imageBase64,
-                createdAt: new Date()
-            });
-            alert("ပေးပိုမှု အောင်မြင်ပါသည်။");
-            document.getElementById("studentName").value = "";
-            document.getElementById("amount").value = "";
-            fileInput.value = "";
-        } catch (error) {
-            alert("အချက်အလက် ပေးပိုရာတွင် အမှားတစ်ခု ရှိနေပါသည်: " + error.message);
-        }
-    }
+    let isAdmin = false;
 
     function openLoginModal() {
-        document.getElementById("loginModal").style.display = "flex";
+        if(isAdmin) {
+            isAdmin = false;
+            document.getElementById("adminStatusText").innerText = "👤 ကျောင်းသား Mode";
+            document.getElementById("adminAuthBtn").innerText = "Admin ဝင်ရန်";
+            loadPayments();
+        } else {
+            document.getElementById("loginModal").style.display = "flex";
+        }
     }
 
     function closeLoginModal() {
         document.getElementById("loginModal").style.display = "none";
-    }
-
-    function closeDataModal() {
-        document.getElementById("dataModal").style.display = "none";
     }
 
     function loginAdmin() {
@@ -123,41 +116,117 @@ alert("အချက်အလက်များနှင့် Screenshot ပု�
         const pass = document.getElementById("adminPass").value;
 
         if (user === ADMIN_USER && pass === ADMIN_PASS) {
+            isAdmin = true;
+            document.getElementById("adminStatusText").innerText = "🔑 Admin (စစ်ဆေးသူ) Mode";
+            document.getElementById("adminAuthBtn").innerText = "ထွက်မည် (Logout)";
             closeLoginModal();
-            document.getElementById("dataModal").style.display = "flex";
-            loadData();
+            document.getElementById("adminUser").value = "";
+            document.getElementById("adminPass").value = "";
+            loadPayments();
         } else {
-            alert("Username သိုမဟုတ် Password မှားယွင်းနေပါသည်။");
+            alert("Username သို့မဟုတ် Password မှားယွင်းနေပါသည်။");
         }
     }
 
-    function loadData() {
-        const container = document.getElementById("dataContainer");
-        container.innerHTML = "Loading...";
-
-        db.collection("payments").orderBy("createdAt", "desc").get()
-            .then((querySnapshot) => {
-                container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = "<p>ပေးပိုထားသော စာရင်းမရှိသေးပါ။</p>";
-                    return;
-                }
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const item = document.createElement("div");
-                    item.className = "data-item";
-                    item.innerHTML = `
-                        <p><strong>ကျောင်းသား:</strong> ${data.studentName}</p>
-                        <p><strong>ပမာဏ:</strong> ${data.amount} MMK</p>
-                        <img src="${data.image}" alt="Screenshot">
-                    `;
-                    container.appendChild(item);
-                });
-            })
-            .catch((error) => {
-                container.innerHTML = "Error loading data: " + error.message;
-            });
+    function convertImageToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
     }
+
+    async function submitPayment() {
+        const name = document.getElementById("studentName").value.trim();
+        const amount = parseFloat(document.getElementById("amount").value);
+        const fileInput = document.getElementById("screenshot");
+
+        if (!name  isNaN(amount)  fileInput.files.length === 0) {
+            alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
+            return;
+        }
+
+        try {
+            const imageBase64 = await convertImageToBase64(fileInput.files[0]);
+
+            await db.collection("payments").add({
+                studentName: name,
+                amount: amount,
+                image: imageBase64,
+                status: "pending",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert("စာရင်းပေးပို့ပြီးပါပြီ။ Admin စစ်ဆေးသည်အထိ စောင့်ဆိုင်းပေးပါ။");
+            document.getElementById("studentName").value = "";
+            document.getElementById("amount").value = "";
+            fileInput.value = "";
+        } catch (error) {
+            alert("အမှားအယွင်းရှိနေပါသည်: " + error.message);
+        }
+    }
+
+    function loadPayments() {
+        db.collection("payments").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+            const listContainer = document.getElementById("paymentList");
+            listContainer.innerHTML = "";
+            
+            let totalApproved = 0;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const id = doc.id;
+
+                if (data.status === "approved") {
+                    totalApproved += data.amount;
+                }
+
+                const card = document.createElement("div");
+                card.className = "card";
+
+                const imageHtml = data.image ? <img src="${data.image}" alt="Screenshot"> : '';
+const adminBtnsHtml = (isAdmin && data.status === "pending") ? `
+                    <div class="action-btns">
+                        <button class="approve-btn" onclick="approvePayment('${id}')">✓ အတည်ပြုမည် (Approve)</button>
+                        <button class="delete-btn" onclick="deletePayment('${id}')">ဖျက်မည်</button>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>${data.studentName}</span>
+                        <span>${data.amount ? data.amount.toLocaleString() : 0} ကျပ်</span>
+                    </div>
+                    <div>
+                        အခြေအနေ: <span class="status ${data.status}">${data.status === 'approved' ? 'အတည်ပြုပြီး' : 'စစ်ဆေးနေဆဲ'}</span>
+                    </div>
+                    ${imageHtml}
+                    ${adminBtnsHtml}
+                `;
+
+                listContainer.appendChild(card);
+            });
+
+            document.getElementById("totalApproved").innerText = totalApproved.toLocaleString();
+        }, error => {
+            console.error("Error loading payments: ", error);
+        });
+    }
+
+    async function approvePayment(id) {
+        await db.collection("payments").doc(id).update({
+            status: "approved"
+        });
+    }
+
+    async function deletePayment(id) {
+        if (confirm("ဒီစာရင်းကို ဖျက်မှာ သေချာပါသလား?")) {
+            await db.collection("payments").doc(id).delete();
+        }
+    }
+
+    loadPayments();
 </script>
 
 </body>
