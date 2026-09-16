@@ -187,12 +187,13 @@
 
                 // ပြင်ဆင်လိုက်သည်: Backticks (``) ပြန်မှန်ပေးထားပါသည်
                 const imageHtml = data.image ? `<img src="${data.image}" alt="Screenshot">` : '';
-                const adminBtnsHtml = (isAdmin && data.status === "pending") ? `
-                    <div class="action-btns">
-                        <button class="approve-btn" onclick="approvePayment('${id}')">✓ အတည်ပြုမည် (Approve)</button>
-                        <button class="delete-btn" onclick="deletePayment('${id}')">ဖျက်မည်</button>
-                    </div>
-                ` : '';
+                const adminBtnsHtml = isAdmin ? `
+    <div class="action-btns">
+        ${data.status === "pending" ? `<button class="approve-btn" onclick="approvePayment('${id}')">✓ အတည်ပြုမည် (Approve)</button>` : ''}
+        <button class="delete-btn" onclick="deletePayment('${id}')">ဖျက်မည်</button>
+    </div>
+` : '';
+
 
                 card.innerHTML = `
                     <div class="card-header">
