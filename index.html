@@ -73,7 +73,7 @@
         <input type="text" id="adminUser" placeholder="Username">
         <input type="password" id="adminPass" placeholder="Password">
         <button onclick="loginAdmin()">ဝင်မည်</button>
-<button onclick="closeLoginModal()" style="background: #6b7280;">မလုပ်တော့ပါ</button>
+        <button onclick="closeLoginModal()" style="background: #6b7280;">မလုပ်တော့ပါ</button>
     </div>
 </div>
 
@@ -142,7 +142,8 @@
         const amount = parseFloat(document.getElementById("amount").value);
         const fileInput = document.getElementById("screenshot");
 
-        if (!name  isNaN(amount)  fileInput.files.length === 0) {
+        // ပြင်ဆင်လိုက်သည်: Logical OR (||) များ ထည့်ပေးထားပါသည်
+        if (!name || isNaN(amount) || fileInput.files.length === 0) {
             alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
             return;
         }
@@ -185,8 +186,9 @@
                 const card = document.createElement("div");
                 card.className = "card";
 
-                const imageHtml = data.image ? <img src="${data.image}" alt="Screenshot"> : '';
-const adminBtnsHtml = (isAdmin && data.status === "pending") ? `
+                // ပြင်ဆင်လိုက်သည်: Backticks (``) ပြန်မှန်ပေးထားပါသည်
+                const imageHtml = data.image ? `<img src="${data.image}" alt="Screenshot">` : '';
+                const adminBtnsHtml = (isAdmin && data.status === "pending") ? `
                     <div class="action-btns">
                         <button class="approve-btn" onclick="approvePayment('${id}')">✓ အတည်ပြုမည် (Approve)</button>
                         <button class="delete-btn" onclick="deletePayment('${id}')">ဖျက်မည်</button>
