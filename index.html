@@ -142,11 +142,10 @@
         const amount = parseFloat(document.getElementById("amount").value);
         const fileInput = document.getElementById("screenshot");
 
-        // ပြင်ဆင်လိုက်သည်: Logical OR (||) များ ထည့်ပေးထားပါသည်
-        if (!name || isNaN(amount) || fileInput.files.length === 0) {
-            alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
-            return;
-        }
+       if (!name || isNaN(amount) || fileInput.files.length === 0) {
+    alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
+    return;
+}
 
         try {
             const imageBase64 = await convertImageToBase64(fileInput.files[0]);
