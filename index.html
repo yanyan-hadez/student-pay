@@ -143,7 +143,7 @@
         const amount = parseFloat(document.getElementById("amount").value);
         const fileInput = document.getElementById("screenshot");
 
-        if (!name  isNaN(amount)  fileInput.files.length === 0) {
+       if (!name || isNaN(amount) || fileInput.files.length === 0) {
             alert("အချက်အလက်များနှင့် Screenshot ပုံကို အပြည့်အစုံဖြည့်ပါ။");
             return;
         }
